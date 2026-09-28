@@ -1,0 +1,289 @@
+// Prisma Schema for CovrIQ Sports Betting Intelligence Platform
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                 String           @id @default(uuid()) @db.Uuid
+  email              String           @unique
+  password_hash      String
+  name               String?
+  avatar_url         String?
+  reset_token        String?
+  reset_token_expiry DateTime?
+  created_at         DateTime         @default(now())
+  updated_at         DateTime         @updatedAt
+
+  conversations      Conversation[]
+  saved_items        SavedItem[]
+  alerts             EdgeAlert[]
+  preference         UserPreference?
+  community_posts    CommunityPost[]
+  community_comments CommunityComment[]
+  community_votes    CommunityVote[]
+  community_reactions CommunityReaction[]
+  community_reports  CommunityReport[] @relation("CommunityReportsByReporter")
+  reported_reports   CommunityReport[] @relation("CommunityReportsAgainstUser")
+  community_blocks   CommunityBlock[] @relation("CommunityBlocksByBlocker")
+  blocked_by         CommunityBlock[] @relation("CommunityBlocksBlockedUser")
+  moderation_actions CommunityModerationAction[]
+  @@map("users")
+}
+
+model Conversation {
+  id             String           @id @default(uuid())
+  user_id        String?          @db.Uuid
+  title          String           @default("New Sports Analysis")
+  mode           String           @default("ai_picks") // which Discover Mode owns this chat (ai_picks, value_finder, upset_finder, compare_bets, parlay_lab, deep_analysis, edge_scanner)
+  sport          String           @default("mlb") // global sport context the chat was created under (mlb, nfl, nba, wnba, nhl, soccer) - FIXED at creation
+  league         String?          // soccer competition id for soccer chats (epl, laliga, ucl, ...), null otherwise
+  created_at     DateTime         @default(now())
+  updated_at     DateTime         @updatedAt
+
+  user           User?            @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  messages       Message[]
+  research_logs  AiResearchLog[]
+
+  @@map("conversations")
+}
+
+model Message {
+  id              String           @id @default(uuid())
+  conversation_id String
+  role            String           // "user" | "assistant" | "system"
+  content         String
+  model           String?          @default("gpt-5.6")
+  response_id     String?
+  metadata        Json?            // Stores parsed structured cards, sport, edge, verdict, odds, provider
+  created_at      DateTime         @default(now())
+
+  conversation    Conversation     @relation(fields: [conversation_id], references: [id], onDelete: Cascade)
+  research_logs   AiResearchLog[]
+
+  @@map("messages")
+}
+
+model SavedItem {
+  id           String    @id @default(uuid())
+  user_id      String    @db.Uuid
+  type         String    @default("bet_pick") // "bet_pick" | "matchup_analysis" | "parlay"
+  title        String
+  content      Json      // Detailed structured pick data, market card, verdict, rationale, sources, provider
+  stake        Float?    // Optional bet stake amount in currency units
+  result       String    @default("pending") // "pending" | "won" | "lost" | "push" | "void"
+  closing_odds String?   // Closing American/Decimal odds for CLV calculation
+  clv_percent  Float?    // Calculated Closing Line Value %
+  profit       Float?    @default(0) // Calculated profit/loss
+  notes        String?   // User reflection/handicapping notes
+  created_at   DateTime  @default(now())
+  updated_at   DateTime? @updatedAt
+
+  user         User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@map("saved_items")
+}
+
+model EdgeAlert {
+  id           String    @id @default(uuid())
+  user_id      String    @db.Uuid
+  game_id      String?
+  matchup      String
+  sport        String    @default("MLB")
+  market       String    @default("Moneyline")
+  selection    String
+  target_edge  Float?
+  target_odds  String?
+  alert_type   String    @default("edge_threshold")
+  is_active    Boolean   @default(true)
+  triggered_at DateTime?
+  created_at   DateTime  @default(now())
+
+  user         User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@map("edge_alerts")
+}
+
+model UserPreference {
+  id            String   @id @default(uuid())
+  user_id       String   @unique @db.Uuid
+  theme         String   @default("dark") // "dark" | "light"
+  odds_format   String   @default("both") // "american" | "decimal" | "both"
+  chat_font     String   @default("serif") // "serif" | "sans"
+  selected_sport  String  @default("mlb") // user's current global research sport (mlb, nfl, nba, wnba, nhl, soccer)
+  selected_league String? // soccer competition id for soccer users (epl, laliga, ucl, ...), null otherwise
+  updated_at    DateTime @updatedAt
+
+  user        User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@map("user_preferences")
+}
+
+model AiResearchLog {
+  id              String        @id @default(uuid())
+  conversation_id String
+  message_id      String?
+  query           String
+  sources         Json          // Array of source URLs, titles, provider, and snippet citations
+  created_at      DateTime      @default(now())
+
+  conversation    Conversation  @relation(fields: [conversation_id], references: [id], onDelete: Cascade)
+  message         Message?      @relation(fields: [message_id], references: [id], onDelete: SetNull)
+
+  @@map("ai_research_logs")
+}
+
+
+model CommunityRoom {
+  id          String   @id @default(uuid())
+  sport       String   @unique
+  title       String
+  description String
+  emoji       String?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  posts       CommunityPost[]
+
+  @@map("community_rooms")
+}
+
+model CommunityPost {
+  id          String   @id @default(uuid())
+  room_id     String
+  user_id     String   @db.Uuid
+  sport       String
+  content     String
+  quote       Json?
+  is_deleted  Boolean  @default(false)
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  room        CommunityRoom @relation(fields: [room_id], references: [id], onDelete: Cascade)
+  user        User          @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  comments    CommunityComment[]
+  votes       CommunityVote[]
+  reactions   CommunityReaction[]
+  reports     CommunityReport[]
+
+  @@index([sport, created_at])
+  @@map("community_posts")
+}
+
+model CommunityComment {
+  id          String   @id @default(uuid())
+  post_id     String
+  parent_id   String?
+  user_id     String   @db.Uuid
+  sport       String
+  content     String
+  quote       Json?
+  is_deleted  Boolean  @default(false)
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  post        CommunityPost    @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  parent      CommunityComment? @relation("CommunityCommentReplies", fields: [parent_id], references: [id], onDelete: SetNull)
+  replies     CommunityComment[] @relation("CommunityCommentReplies")
+  user        User             @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  votes       CommunityVote[]
+  reactions   CommunityReaction[]
+  reports     CommunityReport[]
+
+  @@index([post_id, created_at])
+  @@index([parent_id])
+  @@map("community_comments")
+}
+
+model CommunityVote {
+  id          String   @id @default(uuid())
+  user_id     String   @db.Uuid
+  post_id     String?
+  comment_id  String?
+  value       Int
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  user        User              @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  post        CommunityPost?    @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  comment     CommunityComment? @relation(fields: [comment_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, post_id])
+  @@unique([user_id, comment_id])
+  @@map("community_votes")
+}
+
+model CommunityReaction {
+  id          String   @id @default(uuid())
+  user_id     String   @db.Uuid
+  post_id     String?
+  comment_id  String?
+  reaction    String
+  created_at  DateTime @default(now())
+
+  user        User              @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  post        CommunityPost?    @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  comment     CommunityComment? @relation(fields: [comment_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, post_id, reaction])
+  @@unique([user_id, comment_id, reaction])
+  @@map("community_reactions")
+}
+
+model CommunityReport {
+  id               String   @id @default(uuid())
+  reporter_id      String   @db.Uuid
+  reported_user_id String?  @db.Uuid
+  post_id          String?
+  comment_id       String?
+  reason           String
+  details          String?
+  status           String   @default("pending")
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
+
+  reporter      User              @relation("CommunityReportsByReporter", fields: [reporter_id], references: [id], onDelete: Cascade)
+  reported_user User?             @relation("CommunityReportsAgainstUser", fields: [reported_user_id], references: [id], onDelete: SetNull)
+  post          CommunityPost?    @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  comment       CommunityComment? @relation(fields: [comment_id], references: [id], onDelete: Cascade)
+
+  @@unique([reporter_id, post_id])
+  @@unique([reporter_id, comment_id])
+  @@index([status, created_at])
+  @@map("community_reports")
+}
+
+model CommunityBlock {
+  id              String   @id @default(uuid())
+  blocker_id      String   @db.Uuid
+  blocked_user_id String   @db.Uuid
+  created_at      DateTime @default(now())
+
+  blocker      User @relation("CommunityBlocksByBlocker", fields: [blocker_id], references: [id], onDelete: Cascade)
+  blocked_user User @relation("CommunityBlocksBlockedUser", fields: [blocked_user_id], references: [id], onDelete: Cascade)
+
+  @@unique([blocker_id, blocked_user_id])
+  @@map("community_blocks")
+}
+
+model CommunityModerationAction {
+  id             String   @id @default(uuid())
+  moderator_id   String   @db.Uuid
+  target_user_id String?  @db.Uuid
+  post_id        String?
+  comment_id     String?
+  action         String
+  reason         String?
+  created_at     DateTime @default(now())
+
+  moderator User @relation(fields: [moderator_id], references: [id], onDelete: Cascade)
+
+  @@index([created_at])
+  @@map("community_moderation_actions")
+}
+

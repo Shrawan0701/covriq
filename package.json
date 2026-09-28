@@ -1,0 +1,26 @@
+{
+  "name": "covriq",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "install:all": "npm install && npm --prefix server install && npm --prefix client install",
+    "dev:server": "npm --prefix server run dev",
+    "dev:client": "npm --prefix client run dev",
+    "dev": "node run-dev.js",
+    "test:server": "npm --prefix server test",
+    "prisma:generate": "npm --prefix server run prisma:generate",
+    "prisma:push": "npm --prefix server run prisma:push",
+    "prisma:seed": "npm --prefix server run prisma:seed"
+  },
+  "keywords": [
+    "sports-betting",
+    "ai",
+    "odds-calculator",
+    "openai",
+    "react",
+    "express",
+    "prisma"
+  ],
+  "author": "CovrIQ Team",
+  "license": "ISC"
+}

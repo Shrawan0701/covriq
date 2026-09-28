@@ -1,0 +1,33 @@
+node_modules/
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Build and coverage output
+dist/
+build/
+coverage/
+.nyc_output/
+
+# Local caches
+.cache/
+.tmp/
+tmp/
+
+# Prisma/local generated data
+*.db
+*.db-journal
+covriq_local_db.json
+
+# Local scratch scripts
+__*.mjs

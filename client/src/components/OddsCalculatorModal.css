@@ -1,0 +1,269 @@
+/* ============================================
+   Odds Calculator Modal
+   ============================================ */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-5);
+  z-index: var(--z-modal);
+  animation: fadeIn 0.2s ease forwards;
+}
+
+.modal-content {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-xl);
+  width: 100%;
+  max-width: 580px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: var(--shadow-xl);
+  display: flex;
+  flex-direction: column;
+  animation: fadeInScale 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.modal-header {
+  padding: var(--space-4) var(--space-5);
+  border-bottom: 1px solid var(--border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+
+.modal-title {
+  font-family: var(--font-heading);
+  font-size: 18px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--text-primary);
+  min-width: 0;
+}
+
+.modal-header button {
+  color: var(--text-muted);
+  padding: 6px;
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.modal-header button:hover {
+  color: var(--text-primary);
+  background: var(--bg-surface-hover);
+}
+
+.modal-body {
+  padding: var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.calc-tabs {
+  display: flex;
+  background: var(--bg-surface-elevated);
+  border-radius: var(--radius-md);
+  padding: 4px;
+  gap: 4px;
+}
+
+.calc-tab-btn {
+  flex: 1;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-align: center;
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+}
+
+.calc-tab-btn:hover {
+  color: var(--text-primary);
+}
+
+.calc-tab-btn.active {
+  background: var(--bg-surface);
+  color: var(--accent-cyan);
+  box-shadow: var(--shadow-sm);
+}
+
+.calc-input-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-3);
+}
+
+.parlay-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.calc-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.calc-label {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  letter-spacing: 0.5px;
+}
+
+.calc-input {
+  background: var(--bg-surface-elevated);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-4);
+  font-size: 15px;
+  font-family: var(--font-mono);
+  font-weight: 600;
+  color: var(--text-primary);
+  transition: all var(--transition-fast);
+}
+
+.calc-input:focus {
+  border-color: var(--accent-cyan);
+  box-shadow: 0 0 0 3px var(--accent-cyan-glow);
+}
+
+.calc-results-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-3);
+  background: var(--bg-surface-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+}
+
+.calc-res-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.calc-res-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.calc-res-val {
+  font-size: 18px;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  color: var(--text-primary);
+}
+
+.calc-res-val.highlight {
+  color: var(--accent-emerald);
+}
+
+.calc-res-val.cyan {
+  color: var(--accent-cyan);
+}
+
+.parlay-legs-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.parlay-leg-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.parlay-leg-row button {
+  color: var(--text-muted);
+  padding: 6px;
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.parlay-leg-row button:hover {
+  color: var(--accent-rose);
+  background: var(--accent-rose-glow);
+}
+
+/* ============================================
+   Responsive
+   ============================================ */
+@media (max-width: 767px) {
+  .modal-content {
+    max-width: 100%;
+  }
+
+  .modal-body {
+    padding: var(--space-4);
+  }
+
+  .calc-tab-btn {
+    font-size: 12px;
+    padding: var(--space-2);
+  }
+}
+
+@media (max-width: 480px) {
+  .modal-overlay {
+    padding: var(--space-3);
+  }
+
+  .calc-input-grid {
+    grid-template-columns: 1fr;
+    gap: var(--space-2);
+  }
+
+  .modal-header {
+    padding: var(--space-3) var(--space-4);
+  }
+
+  .modal-title {
+    font-size: 15px;
+  }
+
+  .modal-body {
+    padding: var(--space-3);
+    gap: var(--space-4);
+  }
+
+  .calc-results-grid {
+    grid-template-columns: 1fr;
+    gap: var(--space-2);
+  }
+
+  .parlay-leg-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-2);
+    padding: var(--space-2);
+    background: var(--bg-surface-elevated);
+    border-radius: var(--radius-md);
+  }
+
+  .parlay-leg-row input {
+    width: 100% !important;
+  }
+
+  .parlay-leg-row button {
+    align-self: flex-end;
+  }
+}
