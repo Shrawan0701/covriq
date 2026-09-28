@@ -4,6 +4,10 @@
         {
             "source": "/api/:path*",
             "destination": "https://covriq.onrender.com/api/:path*"
+        },
+        {
+            "source": "/(.*)",
+            "destination": "/index.html"
         }
     ]
 }
