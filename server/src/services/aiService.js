@@ -42,6 +42,9 @@ RESPONSE STYLE (ALWAYS APPLIES):
 - Sound like an elite quantitative sports betting intelligence analyst talking directly to a sharp bettor.
 - Be data-driven, decisive, and mathematically rigorous.
 - Clearly separate Model Probability, Implied Probability, Probability Edge, Break-Even Probability, and Expected Value (EV%).
+- Do NOT output raw LaTeX, TeX delimiters, or formula markup such as "\\[", "\\]", "\\frac{}", "_{text{}}", or "\\times". Explain math in clean prose, short bullet points, or plain-text equations like "1 / 1.91 = 52.38%".
+- Never tell the user a fact is "supplied data", "provided data", "verified data", "verified matchup listing", or "not supported by the supplied/provided data". Speak like a polished analyst: use phrases such as "Current board", "season profile", "market board", "available matchup context", or simply state the fact.
+- For stat comparison or general sports questions, use supplemental season-stat research, records, standings, leaders, and team profile context as first-class evidence. Lead with a clean markdown table only for categories that have actual values. Never output comparison rows where both teams are blank, dash-only, N/A, or unknown. Then add a concise takeaway section. Do not force betting-card structure unless the user asks for a pick, wager, odds, edge, EV, or prediction.
 - Never fabricate injuries, starting lineups, market odds, or past results.
 - Distinguish strictly between LIVE (in progress), UPCOMING (pre-game), and FINAL fixtures.
 - CRITICAL LIVE MARKET RULE: If a game has started (LIVE), never use stale pre-match odds as live edge/EV. If verified live odds are unavailable, mark "Current live market unavailable" and set Edge/EV to N/A.
@@ -148,24 +151,21 @@ SPORT-SPECIFIC GUIDELINES:
 - Recommended Unit Size: {e.g. 1.0 Unit, 1.25 Units}
 - Summary: {1-2 sentence decisive summary recommendation}
 
-### [SOURCES]
-- https://www.covers.com
-- https://www.actionnetwork.com
-- https://www.rotowire.com
 
 ALTERNATE FORMAT - MULTIPLE GAMES / FULL SLATE PREDICTIONS:
-If the user asks for predictions across MULTIPLE or ALL games today, repeat a full [GAME_HEADER] + [MARKET_CARD] + [WHY_I_LIKE_IT] block for EVERY game in the slate data, and end with a single shared [SOURCES] block.
+If the user asks for predictions across MULTIPLE or ALL games today, repeat a full [GAME_HEADER] + [MARKET_CARD] + [WHY_I_LIKE_IT] block for EVERY game in the slate data, and do not add a sources block.
 
 ALTERNATE LIGHTWEIGHT FORMAT - SCHEDULE / INFO ONLY:
 If the user asks only for a schedule/fixtures list without betting advice:
 
 ### [SCHEDULE]
 {Natural schedule introduction}
-- {Away} @ {Home} - {Time} - Starters: {Away Starter} vs {Home Starter}
+| Date | Matchup | Time | Starting personnel |
+|---|---|---|---|
+| {Date} | {Away} @ {Home} | {Time with timezone} | {Confirmed or probable starters when available} |
 
-### [SOURCES]
-- https://www.covers.com
-- https://www.actionnetwork.com
+Include every requested game. Omit the Starting personnel column when it cannot be verified; never fill it with dashes.
+
 `;
 
 /**
@@ -215,6 +215,84 @@ export function detectQueryIntent(prompt) {
 export function detectSlateIntent(prompt) {
   const p = (prompt || '').toLowerCase();
   return /\ball\b[^.?!]*(games?|matches?|slate)|\bevery\b[^.?!]*(games?|matches?|matchups?)|full\s+slate|whole\s+slate|entire\s+slate|today'?s\s+(games|slate|matches)(?!.*\b(schedule|scores?)\b)/i.test(p);
+}
+
+function isResearchHeavyQuery(prompt = '') {
+  return /\b(stats?|statistics|standings?|records?|rankings?|leaders?|team profile|season profile|compare|comparison|splits?|offense|defense|yards|points scored|points allowed|through week|live table|table|schedule|slate|fixtures?|games? today|games? tonight|probable|starters?|starting pitcher|pitchers?|goalies?|goaltenders?|lineups?|rosters?|injuries|injury report|availability|inactives?|upcoming|tomorrow|next week|date range|kickoff times?|game times?)\b/i.test(prompt);
+}
+
+function collectResponseSources(response) {
+  const sources = [];
+  const seen = new Set();
+  const visit = (value) => {
+    if (!value || typeof value !== 'object') return;
+    if (Array.isArray(value)) {
+      value.forEach(visit);
+      return;
+    }
+    if (value.type === 'url_citation' && value.url && !seen.has(value.url)) {
+      seen.add(value.url);
+      let domain = 'Verified Web Source';
+      try { domain = new URL(value.url).hostname.replace(/^www\./, ''); } catch (e) {}
+      sources.push({
+        title: value.title || domain,
+        url: value.url,
+        domain,
+        provider: 'OpenAI Web Search'
+      });
+    }
+    Object.values(value).forEach(visit);
+  };
+  visit(response?.output);
+  return sources;
+}
+
+function sanitizeAssistantText(text = '') {
+  return String(text || '')
+    .replace(/^\s*#{0,4}\s*\[?(?:sources?|citations?)\]?\s*:?\s*[\s\S]*$/gim, '')
+    .replace(/\(\[[^\]]+\]\(https?:\/\/[^)]+\)\)/gi, '')
+    .replace(/\[[^\]]+\]\(https?:\/\/[^)]+\)/gi, (match) => {
+      const label = match.match(/^\[([^\]]+)\]/)?.[1] || '';
+      return label && !/^https?:/i.test(label) ? label : '';
+    })
+    .replace(/\(https?:\/\/[^)\s]+\)/gi, '')
+    .replace(/https?:\/\/\S+/gi, '')
+    .replace(/^\s*(?:sources?|citations?)\s*:.*$/gim, '')
+    .replace(/^\s*[-*]\s*(?:sources?|citations?)\s*:.*$/gim, '')
+    .replace(/^\s*[-*]\s*--\s*$/gim, '')
+    .replace(/^\s*let me know if.*$/gim, '')
+    .replace(/^\s*would you like.*$/gim, '')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
+async function createWebSearchResponse(openai, request) {
+  const models = Array.from(new Set([
+    process.env.OPENAI_WEB_MODEL,
+    request.model,
+    'gpt-4o',
+    'gpt-4o-mini'
+  ].filter(Boolean)));
+
+  let lastError;
+  for (const model of models) {
+    for (const toolType of ['web_search', 'web_search_preview']) {
+      try {
+        return await openai.responses.create({
+          model,
+          instructions: request.instructions,
+          input: request.input,
+          tools: [{ type: toolType, search_context_size: 'high' }],
+          temperature: 0.2
+        });
+      } catch (err) {
+        lastError = err;
+        const msg = String(err?.message || '');
+        if (!/web_search|tool|unsupported|model|temperature/i.test(msg)) throw err;
+      }
+    }
+  }
+  throw lastError;
 }
 
 function detectPickSideIntent(prompt, mode = 'ai_picks') {
@@ -371,7 +449,7 @@ function getModeInstruction(mode) {
     case 'parlay_lab':
       return "\nFOCUS: Construct a 2-4 leg parlay. Detail individual leg odds and edges, identify the weakest leg, evaluate correlation, and provide the compounded parlay price, combined win probability, and total EV.";
     case 'deep_analysis':
-      return "\nFOCUS: Deliver an exhaustive institutional-grade quantitative breakdown. Detail regression trends, bullpen/depth charts, tactical splits, leverage index, and weather/park factors in [MATCHUP_AND_CURRENT_INFO].";
+      return "\nFOCUS: Deliver an exhaustive institutional-grade quantitative breakdown. Use polished tables for team/player comparisons and summary grids when useful. Do not mention supplied/provided/verified data wording to the user. Detail regression trends, bullpen/depth charts, tactical splits, leverage index, and weather/park factors in [MATCHUP_AND_CURRENT_INFO]. FORMULA PRESENTATION: Never show raw LaTeX or academic equation markup. When explaining pricing math for any sport, translate it into polished bettor-facing text with plain equations and sport-aware outcomes. Example style: 'At -110, decimal price is 1.91. Break-even probability: 1 / 1.91 = 52.38%.' For totals, spreads, moneylines, props, and 3-way markets, explain win/push/loss conditions in plain language for that specific sport and market. Keep it polished, not hardcoded.";
     case 'edge_scanner':
       return "\nFOCUS: Screen across today's board and rank the top positive-EV opportunities with precise edge and expected value calculations.";
     case 'ai_picks':
@@ -732,6 +810,8 @@ export async function streamAiAnalysis({
   };
   const isSlateRequest = classification.category === 'full_slate';
   const isConversational = classification.category === 'conversational';
+  const conversationContextText = conversationHistory.slice(-6).map(m => m.content || '').join(' ');
+  const researchIntentText = `${conversationContextText} ${prompt}`;
   const pickSideIntent = detectPickSideIntent(prompt, mode);
 
   // Live UX Status Stages
@@ -760,7 +840,7 @@ export async function streamAiAnalysis({
       } else if (isSlateRequest) {
         modeInstruction += "\n\nIMPORTANT OVERRIDE: The user wants predictions across the entire slate. Use ALTERNATE FORMAT - MULTIPLE GAMES / FULL SLATE PREDICTIONS.";
       } else if (isConversational) {
-        modeInstruction += "\n\nIMPORTANT OVERRIDE: Respond in conversational prose without forcing pick cards.";
+        modeInstruction += "\n\nIMPORTANT OVERRIDE: Respond in conversational prose without forcing pick cards. If the user asks for stats, comparison, records, splits, team/player profiles, or explanations, format the answer like a premium analyst note: short intro, clean markdown table where useful, then 2-4 takeaways. Never use phrases like supplied data, provided data, verified data, or I do not have verified/supplied/provided stats. Use the supplemental season-stat research block when present. If a detail is missing, omit that row entirely; do not create blank or dash-filled table rows and do not say the current board does not show that field.";
       }
 
       // Stage 4: Calculating CovrIQ model...
@@ -782,6 +862,28 @@ export async function streamAiAnalysis({
         ];
       } else {
         userContent = prompt;
+      }
+
+      const shouldUseOpenAIWeb = !hasImages && isResearchHeavyQuery(researchIntentText);
+      if (shouldUseOpenAIWeb) {
+        onStatus('Searching live web, standings, stats, and team pages...');
+        const historyText = conversationHistory.slice(-6)
+          .map(m => (m.role === 'assistant' ? 'Assistant' : 'User') + ': ' + sanitizeAssistantText(m.content))
+          .join('\n');
+        const todayIso = new Date().toISOString().slice(0, 10);
+        const webResponse = await createWebSearchResponse(openai, {
+          model: modelName,
+          instructions: enrichedSystemPrompt + '\n\nWEB RESEARCH DIRECTIVE:\nUse web search before answering current sports facts, including stats, standings, records, schedules, fixtures, probable starters, starting pitchers, goalies, lineups, injuries, leaders, home/away splits, tables, and comparisons. Search broadly and cross-check at least two useful results when possible, prioritizing official league/team pages and established sports data sites. The current date is supplied in the user input; answer for the current active season and exact requested date. Resolve short follow-ups from conversation history. Produce the requested data directly; do not refuse, ask for screenshots or links, or say the current board lacks public information until searches have genuinely failed. For a matchup without an explicit date, infer the nearest upcoming matching fixture from context and state its date. For MLB probable pitchers, NHL goalies, and other projected starters, clearly label Confirmed or Probable and include the latest available player metrics. Never expose implementation or provider names, raw URLs, markdown links, citations, a Sources section, or source columns in visible prose or tables. For standings, comparisons, leaders, schedules, probable starters, and home-away requests, use clean markdown tables. Every row must be self-contained: repeat division, conference, or group labels instead of leaving cells blank. Never output decorative dash-only rows or empty source bullets. Use sport-specific columns. If the user asks for all teams or all games, include the complete available set. If one granular field remains unavailable after searching multiple sources, omit that column rather than filling it with dashes.',
+          input: 'Current date: ' + todayIso + '\nConversation history:\n' + (historyText || '(none)') + '\n\nSelected sport context: ' + researchCtx.searchName + '.\nCurrent user request: ' + prompt + '\n\nResolve this as a current-season request. If the request is a follow-up like home away for all, search the current-season home/away table for the selected sport/league and include all teams available from that current-season table.'
+        });
+        let fullText = sanitizeAssistantText(webResponse.output_text || '');
+        if (fullText) onChunk(fullText);
+        const structured = parseStructuredResponse(fullText);
+        structured.provider = '';
+        structured.dataFreshness = '';
+        structured.sources = [];
+        onComplete({ fullText, structured });
+        return;
       }
 
       const messages = [
@@ -933,10 +1035,6 @@ Consensus pricing of ${americanOdds} implies a break-even win rate of ${breakEve
 - Recommended Unit Size: 1.0 Unit
 - Summary: High-value position backed by verified starter leverage and +${ev}% mathematical EV.
 
-### [SOURCES]
-- https://www.covers.com
-- https://www.actionnetwork.com
-- https://www.rotowire.com
 `;
 
   const words = simulatedResponse.split(' ');

@@ -36,7 +36,7 @@ export async function scanBoardForEdges({
   const researchCtx = buildResearchContext({ sport: sportCtx.sportId, league: sportCtx.leagueId });
 
   const intelligence = await getSportsIntelligenceContext('today games schedule odds', sportCtx.aiSport, researchCtx);
-  const games = intelligence.allGames || [];
+  const games = (intelligence.allGames || []).filter(game => game.state !== 'post');
   const provider = intelligence.provider || 'Live Sports Data';
   const retrievedAt = new Date().toISOString();
 
@@ -277,3 +277,4 @@ export async function scanBoardForEdges({
     sources: intelligence.sources || []
   };
 }
+

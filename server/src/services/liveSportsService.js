@@ -241,8 +241,7 @@ export async function fetchLiveSchedule(sport = 'MLB') {
     });
   });
 
-  const notYetFinal = parsedGames.filter(g => g.state !== 'post');
-  return notYetFinal.length > 0 ? notYetFinal : parsedGames;
+  return parsedGames.filter(g => g.state !== 'post');
 }
 
 /**

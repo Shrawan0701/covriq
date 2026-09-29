@@ -313,7 +313,7 @@ export default function App() {
   };
 
   // Send Message & Stream SSE
-  const handleSendMessage = async (text, images = []) => {
+  const handleSendMessage = async (text, images = [], modeOverride = null) => {
 
     const imageList = Array.isArray(images) ? images.filter(Boolean) : (images ? [images] : []);
     const primaryImage = imageList[0] || null;
@@ -344,7 +344,7 @@ export default function App() {
           message: text,
           image: primaryImage || undefined,
           images: imageList.length > 0 ? imageList : undefined,
-          mode: activeMode,
+          mode: modeOverride || activeMode,
           oddsFormat,
           sport: sportId,
           league: leagueId || null
@@ -439,6 +439,19 @@ export default function App() {
     setIsAuthModalOpen(true);
   };
 
+  const openDeepAnalysis = (prompt) => {
+    push('/deep-analysis');
+    setCurrentConversationId(null);
+    setActiveConversation(null);
+    setMessages([]);
+    setStreamingContent('');
+    setStreamingStatus(null);
+    setStreamingStructured(null);
+    setTimeout(() => {
+      handleSendMessage(prompt, [], 'deep_analysis');
+    }, 50);
+  };
+
   return (
     <div className="app-container">
       {/* Mobile Top Navigation Header */}
@@ -512,12 +525,7 @@ export default function App() {
           <CommunityView onOpenAuth={openAuth} />
         ) : isEdgeScannerRoute ? (
           <EdgeScannerView
-            onDeepDive={(prompt) => {
-              push('/deep-analysis');
-              setTimeout(() => {
-                handleSendMessage(prompt);
-              }, 50);
-            }}
+            onDeepDive={openDeepAnalysis}
             onOpenOddsCalc={openOddsCalculator}
             onSavePick={handleSavePick}
             savedItems={savedItems}
@@ -535,6 +543,7 @@ export default function App() {
             onSendMessage={handleSendMessage}
             onOpenOddsCalc={openOddsCalculator}
             onSavePick={handleSavePick}
+            onDeepDive={openDeepAnalysis}
             savedItems={savedItems}
           />
         )}

@@ -116,6 +116,7 @@ export async function getSportsIntelligenceContext(prompt, sport = 'MLB', resear
   const searchLabel = researchCtx?.searchName || sport;
   const forbidden = researchCtx?.forbidden || [];
   const isSlateQuery = /today|slate|games|matches|schedule|all|tonight/i.test(prompt);
+  const isStatsQuery = /stats?|statistics|record|standings|rankings?|leaders?|comparison|compare|through week|season|form|profile/i.test(prompt);
 
   let providerUsed = 'Live Sports Data';
   let allGames = [];
@@ -156,14 +157,20 @@ export async function getSportsIntelligenceContext(prompt, sport = 'MLB', resear
 
   // 3. SUPPLEMENTAL WEB RESEARCH: SERPAPI SEARCH FIRST -> FALLBACK SEARCH
   try {
-    const serpSearch = await searchSerpApiWeb(`${searchLabel} ${prompt} odds consensus starters news`, sport);
+    const researchQuery = isStatsQuery
+      ? `${searchLabel} ${prompt} team stats records standings leaders season profile`
+      : `${searchLabel} ${prompt} odds consensus starters news`;
+    const serpSearch = await searchSerpApiWeb(researchQuery, sport);
     if (serpSearch.success && serpSearch.snippets.length > 0) {
       webSnippets = serpSearch.snippets;
       if (serpSearch.sources.length > 0) {
         sources = [...sources, ...serpSearch.sources];
       }
     } else {
-      const ddgSnippets = await searchDuckDuckGo(`${searchLabel} ${prompt} odds starters`);
+      const ddgQuery = isStatsQuery
+        ? `${searchLabel} ${prompt} team stats records standings leaders season profile`
+        : `${searchLabel} ${prompt} odds starters`;
+      const ddgSnippets = await searchDuckDuckGo(ddgQuery);
       webSnippets = filterSnippetsBySport(ddgSnippets, forbidden);
     }
   } catch (err) {
@@ -251,7 +258,9 @@ ${odds?.overUnder ? `ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¢ Total Line (O/U): ${odds.o
   }
 
   if (webSnippets.length > 0) {
-    formattedContext += `\n[REAL-TIME NEWS, LINE MOVEMENTS, INJURY REPORTS & FORM INTELLIGENCE]:\n` + webSnippets.slice(0, 6).join('\n');
+    formattedContext += isStatsQuery
+      ? `\n[SUPPLEMENTAL SEASON STATISTICS, RECORDS, STANDINGS & TEAM PROFILE RESEARCH]:\n${webSnippets.slice(0, 8).join('\n')}`
+      : `\n[REAL-TIME NEWS, LINE MOVEMENTS, INJURY REPORTS & FORM INTELLIGENCE]:\n${webSnippets.slice(0, 6).join('\n')}`;
   }
 
   return {
@@ -263,3 +272,5 @@ ${odds?.overUnder ? `ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¢ Total Line (O/U): ${odds.o
     dataFreshness
   };
 }
+
+

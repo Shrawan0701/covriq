@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-const SERVER_URL = 'http://127.0.0.1:5003';
+const SERVER_URL = 'http://127.0.0.1:5002';
 const CLIENT_URL = 'http://127.0.0.1:5174';
 
 test('E2E: Vite Client is serving frontend application', async () => {

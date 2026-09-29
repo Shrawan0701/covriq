@@ -42,6 +42,7 @@ export default function ChatWorkspace({
   onSendMessage,
   onOpenOddsCalc,
   onSavePick,
+  onDeepDive,
   savedItems = []
 }) {
   const { sportId, leagueId, displayLabel } = useSport();
@@ -155,6 +156,7 @@ export default function ChatWorkspace({
                     rawContent={message.content}
                     onOpenOddsCalc={onOpenOddsCalc}
                     onSavePick={onSavePick}
+                    onDeepDive={onDeepDive}
                     isSaved={isSaved(message.metadata)}
                   />
                 )}
@@ -180,6 +182,7 @@ export default function ChatWorkspace({
                   rawContent={streamingContent}
                   onOpenOddsCalc={onOpenOddsCalc}
                   onSavePick={onSavePick}
+                  onDeepDive={onDeepDive}
                 />
               )}
             </div>

@@ -12,7 +12,6 @@ import {
   Flame,
   BarChart2,
   Calendar,
-  Sparkles,
   Radio
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
@@ -34,7 +33,7 @@ function hasUsableMarket(marketCard) {
 
 function renderInline(text) {
   if (!text) return '';
-  return String(text).replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+  return cleanAnalysisText(text).replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
 }
 
 
@@ -45,6 +44,12 @@ function cleanAnalysisText(value) {
     .replace(/\\\]/g, '')
     .replace(/\\\(/g, '')
     .replace(/\\\)/g, '')
+    .replace(/\[([^\]]+)\]\(https?:\/\/[^)]+\)/gi, '$1')
+    .replace(/\(https?:\/\/[^)\s]+\)/gi, '')
+    .replace(/https?:\/\/\S+/gi, '')
+    .replace(/^\s*(?:sources?|citations?)\s*:.*$/gim, '')
+    .replace(/^\s*let me know if.*$/gim, '')
+    .replace(/^\s*would you like.*$/gim, '')
     .replace(/\\times/g, ' x ')
     .replace(/\\text\{([^}]+)\}/g, '$1')
     .replace(/P_\{model\}/g, 'model probability')
@@ -54,22 +59,95 @@ function cleanAnalysisText(value) {
     .replace(/\s{2,}/g, ' ')
     .trim();
 }
-function renderMatchupContent(raw) {
-  if (!raw) return '';
-  return String(raw).split('\n').map((line) => {
-    const trimmed = line.trim();
-    if (!trimmed) return '<div class="matchup-gap"></div>';
-    const subheadMatch = trimmed.match(/^(?:#{2,4}\s+|\*\*)([A-Za-z0-9\s&/()-]+)(?:\*\*|:)?$/);
+function isMarkdownTableLine(line) {
+  const trimmed = String(line || '').trim();
+  return trimmed.startsWith('|') && trimmed.endsWith('|') && trimmed.split('|').length >= 4;
+}
+
+function isMarkdownTableSeparator(line) {
+  return /^\|\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)+\|?$/.test(String(line || '').trim());
+}
+
+function parseMarkdownTable(lines, startIndex) {
+  const rows = [];
+  let idx = startIndex;
+  while (idx < lines.length && isMarkdownTableLine(lines[idx])) {
+    if (!isMarkdownTableSeparator(lines[idx])) {
+      rows.push(String(lines[idx]).trim().slice(1, -1).split('|').map(cell => cleanAnalysisText(cell.trim())));
+    }
+    idx += 1;
+  }
+  if (rows.length < 2) return null;
+  const headers = rows[0];
+  const dataRows = rows.slice(1).filter(row => {
+    const statCells = row.slice(1).map(cell => String(cell || '').trim());
+    return statCells.some(cell => cell && !/^[-��]+$/.test(cell) && !/^n\/?a$/i.test(cell) && !/unavailable/i.test(cell));
+  });
+  if (dataRows.length === 0) return null;
+  let previousGroup = '';
+  dataRows.forEach((row) => {
+    if (String(row[0] || '').trim()) previousGroup = row[0];
+    else if (previousGroup) row[0] = previousGroup;
+  });
+  const isMissing = (cell) => {
+    const value = String(cell || '').trim();
+    return !value || /^[-\u2013\u2014]+$/.test(value) || /^n\/?a$/i.test(value) || /unavailable|not confirmed|tbd/i.test(value);
+  };
+  const completeColumnIndexes = headers
+    .map((_, columnIndex) => columnIndex)
+    .filter(columnIndex => columnIndex === 0 || dataRows.every(row => !isMissing(row[columnIndex])));
+  const completeHeaders = completeColumnIndexes.map(columnIndex => headers[columnIndex]);
+  const completeRows = dataRows
+    .filter(row => !isMissing(row[0]))
+    .map(row => completeColumnIndexes.map(columnIndex => row[columnIndex]));
+  if (completeRows.length === 0 || completeHeaders.length < 2) return null;
+  return { headers: completeHeaders, rows: completeRows, nextIndex: idx };
+}
+
+function renderSectionBody(lines) {
+  const nodes = [];
+  for (let idx = 0; idx < lines.length; idx += 1) {
+    const table = parseMarkdownTable(lines, idx);
+    if (table) {
+      nodes.push(
+        <div className="analysis-table-wrap" key={`table-${idx}`}>
+          <table className="analysis-table">
+            <thead><tr>{table.headers.map((header, hIdx) => <th key={hIdx} dangerouslySetInnerHTML={{ __html: renderInline(header) }} />)}</tr></thead>
+            <tbody>{table.rows.map((row, rIdx) => <tr key={rIdx}>{table.headers.map((_, cIdx) => <td key={cIdx} dangerouslySetInnerHTML={{ __html: renderInline(row[cIdx] || '') }} />)}</tr>)}</tbody>
+          </table>
+        </div>
+      );
+      idx = table.nextIndex - 1;
+      continue;
+    }
+    const trimmed = String(lines[idx] || '').trim();
+    if (!trimmed || trimmed === '--' || /^[-*]?\s*(?:sources?|citations?)\s*:?/i.test(trimmed) || isMarkdownTableSeparator(trimmed)) continue;
+    const subheadMatch = trimmed.match(/^(?:#{2,4}\s+|\*\*)([A-Za-z0-9\s&/().'-]+)(?:\*\*|:)?$/);
     if (subheadMatch && !trimmed.startsWith('*') && !trimmed.startsWith('-')) {
-      return `<div class="matchup-subhead"><strong style="color:var(--text-primary);font-size:14.5px;">${subheadMatch[1].trim()}</strong></div>`;
+      const nextTable = parseMarkdownTable(lines, idx + 1);
+      const rawTitle = cleanAnalysisText(subheadMatch[1].trim());
+      const title = /\bvs$/i.test(rawTitle) && nextTable?.headers?.length >= 3
+        ? nextTable.headers[1] + ' vs ' + nextTable.headers[2]
+        : rawTitle;
+      nodes.push(
+        <div key={idx} className="matchup-subhead">
+          <strong>{title}</strong>
+        </div>
+      );
+      continue;
     }
-    const processed = trimmed.replace(/\*\*(.*?)\*\*/g, '<strong style="color:var(--text-primary)">$1</strong>');
-    if (processed.startsWith('- ') || processed.startsWith('* ')) {
-      const cleanBullet = processed.replace(/^[-*]\s*/, '');
-      return `<div class="matchup-bullet-row"><span class="matchup-dot">&bull;</span><span>${cleanBullet}</span></div>`;
-    }
-    return `<div class="matchup-paragraph">${processed}</div>`;
-  }).join('');
+    const isBullet = trimmed.startsWith('-') || trimmed.startsWith('*');
+    const content = isBullet ? trimmed.replace(/^[-*]\s*/, '') : trimmed;
+    nodes.push(isBullet
+      ? <div key={idx} className="bullet-item"><span className="bullet-dot" /><span dangerouslySetInnerHTML={{ __html: renderInline(cleanAnalysisText(content)) }} /></div>
+      : <div key={idx} className="analysis-paragraph" dangerouslySetInnerHTML={{ __html: renderInline(cleanAnalysisText(content)) }} />
+    );
+  }
+  return nodes;
+}
+
+function renderMarkdownBlock(value) {
+  return renderSectionBody(String(value || '').split('\n'));
 }
 
 function parseRawSections(raw) {
@@ -86,7 +164,7 @@ function parseRawSections(raw) {
     }
   });
   if (current.title || current.body.length) sections.push(current);
-  return sections;
+  return sections.filter(section => !/^sources?|citations?$/i.test(section.title.trim()));
 }
 
 function MarketMetrics({ marketCard, isMarketAvailable }) {
@@ -143,7 +221,7 @@ function MarketCard({ marketCard, oddsFormat }) {
   );
 }
 
-function GameHeader({ gameHeader, provider, dataFreshness }) {
+function GameHeader({ gameHeader }) {
   const statusText = gameHeader?.status || 'UPCOMING';
   const isLive = /live|in progress|half|1st|2nd|3rd|4th|qtr|top|bot|inning|period/i.test(statusText);
   const isFinal = /final|ft|ended/i.test(statusText);
@@ -164,11 +242,6 @@ function GameHeader({ gameHeader, provider, dataFreshness }) {
           </div>
         </div>
       </div>
-      <div className="provider-freshness-chip">
-        <Sparkles size={11} style={{ color: 'var(--accent-cyan)' }} />
-        <span>{provider}</span>
-        {dataFreshness && <span className="freshness-sub">- {dataFreshness}</span>}
-      </div>
     </div>
   );
 }
@@ -180,7 +253,7 @@ function SlateGameCard({ pick, oddsFormat }) {
   if (!gameHeader && !marketCard) return null;
   return (
     <div className="slate-game-card animate-fade-in" style={{ marginBottom: '16px' }}>
-      {gameHeader && <GameHeader gameHeader={gameHeader} provider={pick.provider || marketCard?.provider} dataFreshness={pick.dataFreshness || marketCard?.dataFreshness} />}
+      {gameHeader && <GameHeader gameHeader={gameHeader} />}
       {marketCard && <MarketCard marketCard={marketCard} oddsFormat={oddsFormat} />}
       {whyILikeIt.length > 0 && (
         <div className="analysis-section" style={{ marginTop: '8px' }}>
@@ -206,8 +279,6 @@ export default function StructuredResponse({ structuredData, rawContent, onOpenO
   const risks = data.risks || [];
   const verdict = data.verdict;
   const picks = data.picks;
-  const provider = data.provider || marketCard?.provider || 'Live Sports Data';
-  const dataFreshness = data.dataFreshness || marketCard?.dataFreshness || 'Live Verified';
   const isMarketAvailable = hasUsableMarket(marketCard);
   const proseClass = chatFont === 'serif' ? 'ai-prose-serif' : 'ai-prose-sans';
 
@@ -228,7 +299,6 @@ export default function StructuredResponse({ structuredData, rawContent, onOpenO
       <div className={`analysis-card-container ${proseClass}`}>
         <div className="slate-summary-header">
           <div style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>{picks.length} Matchups Analyzed</div>
-          <div className="provider-freshness-chip"><Sparkles size={11} style={{ color: 'var(--accent-cyan)' }} /><span>{provider}</span></div>
         </div>
         {picks.map((pick, idx) => <SlateGameCard key={idx} pick={pick} oddsFormat={oddsFormat} />)}
         <div className="analysis-action-bar"><button className="action-btn" onClick={handleCopy} title="Copy Full Slate Analysis">{copied ? <Check size={14} style={{ color: 'var(--accent-emerald)' }} /> : <Copy size={14} />}<span>{copied ? 'Copied!' : 'Copy All'}</span></button></div>
@@ -238,18 +308,13 @@ export default function StructuredResponse({ structuredData, rawContent, onOpenO
 
   if (!gameHeader && !marketCard && whyILikeIt.length === 0) {
     const sections = parseRawSections(rawContent);
-    if (sections.length === 0) return <div className={`analysis-card-container ${proseClass}`}><div className="analysis-section" style={{ whiteSpace: 'pre-wrap' }}>{rawContent}</div></div>;
+    if (sections.length === 0) return <div className={`analysis-card-container ${proseClass}`}><div className="analysis-section" style={{ whiteSpace: 'pre-wrap' }}>{cleanAnalysisText(rawContent)}</div></div>;
     return (
       <div className={`analysis-card-container ${proseClass}`}>
         {sections.map((section, sIdx) => (
           <div key={sIdx} className="analysis-section animate-fade-in">
             {section.title && <div className="section-heading"><span>{section.title}</span></div>}
-            <div className="bullet-list">{section.body.map((line, lIdx) => {
-              const trimmed = line.trim();
-              const isBullet = trimmed.startsWith('-') || trimmed.startsWith('*');
-              const content = isBullet ? trimmed.replace(/^[-*]\s*/, '') : trimmed;
-              return isBullet ? <div key={lIdx} className="bullet-item"><span className="bullet-dot" /><span dangerouslySetInnerHTML={{ __html: renderInline(cleanAnalysisText(content)) }} /></div> : <div key={lIdx} style={{ fontSize: '14.5px', lineHeight: '1.65', color: 'var(--text-primary)' }} dangerouslySetInnerHTML={{ __html: renderInline(cleanAnalysisText(content)) }} />;
-            })}</div>
+            <div className="bullet-list">{renderSectionBody(section.body)}</div>
           </div>
         ))}
       </div>
@@ -258,11 +323,11 @@ export default function StructuredResponse({ structuredData, rawContent, onOpenO
 
   return (
     <div className={`analysis-card-container ${proseClass}`}>
-      {gameHeader && <GameHeader gameHeader={gameHeader} provider={provider} dataFreshness={dataFreshness} />}
+      {gameHeader && <GameHeader gameHeader={gameHeader} />}
       {marketCard && <MarketCard marketCard={marketCard} oddsFormat={oddsFormat} />}
       {whyILikeIt.length > 0 && <div className="analysis-section animate-fade-in"><div className="section-heading"><CheckCircle2 size={17} style={{ color: 'var(--accent-emerald)' }} /><span>Why It Matters & Key Factors</span></div><div className="bullet-list">{whyILikeIt.map((point, idx) => <div key={idx} className="bullet-item"><span className="bullet-dot" /><span dangerouslySetInnerHTML={{ __html: renderInline(point) }} /></div>)}</div></div>}
-      {matchupInfo?.raw && <div className="analysis-section animate-fade-in"><div className="section-heading"><Info size={17} style={{ color: 'var(--accent-cyan)' }} /><span>Matchup & Current Info</span></div><div className="matchup-text-block" dangerouslySetInnerHTML={{ __html: renderMatchupContent(matchupInfo.raw) }} /></div>}
-      {valueAnalysis && <div className="analysis-section animate-fade-in"><div className="section-heading"><BarChart2 size={17} style={{ color: 'var(--accent-amber)' }} /><span>Market Context & Value Analysis</span></div><div style={{ fontSize: '14.5px', lineHeight: '1.65', color: 'var(--text-primary)' }} dangerouslySetInnerHTML={{ __html: renderInline(cleanAnalysisText(valueAnalysis)) }} /></div>}
+      {matchupInfo?.raw && <div className="analysis-section animate-fade-in"><div className="section-heading"><Info size={17} style={{ color: 'var(--accent-cyan)' }} /><span>Matchup & Current Info</span></div><div className="matchup-text-block">{renderMarkdownBlock(matchupInfo.raw)}</div></div>}
+      {valueAnalysis && <div className="analysis-section animate-fade-in"><div className="section-heading"><BarChart2 size={17} style={{ color: 'var(--accent-amber)' }} /><span>Market Context & Value Analysis</span></div><div className="bullet-list">{renderMarkdownBlock(valueAnalysis)}</div></div>}
       {risks.length > 0 && <div className="analysis-section animate-fade-in" style={{ borderColor: 'rgba(244, 63, 94, 0.2)' }}><div className="section-heading" style={{ color: 'var(--accent-rose)' }}><ShieldAlert size={17} /><span>Risks & Why NOT to Bet</span></div><div className="bullet-list">{risks.map((risk, idx) => <div key={idx} className="bullet-item"><span className="bullet-dot danger" /><span dangerouslySetInnerHTML={{ __html: renderInline(risk) }} /></div>)}</div></div>}
       {verdict && <div className="verdict-card animate-fade-in"><div className="verdict-header"><div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}><div className={`verdict-badge ${verdict.type}`}><Flame size={18} /><span>{verdict.type}</span></div><div><div style={{ fontSize: '12px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: '700' }}>Confidence Rating</div><div style={{ fontSize: '16px', fontWeight: '800', fontFamily: 'var(--font-heading)', color: 'var(--text-primary)' }}>{verdict.confidence}/10 - <span style={{ color: 'var(--accent-cyan)' }}>{verdict.unitSize || '1.0 Unit'}</span></div></div></div></div>{verdict.summary && <div className="verdict-summary" dangerouslySetInnerHTML={{ __html: renderInline(verdict.summary.replace(/^["']+|["']+$/g, '')) }} />}</div>}
       <div className="analysis-action-bar">
@@ -273,6 +338,11 @@ export default function StructuredResponse({ structuredData, rawContent, onOpenO
     </div>
   );
 }
+
+
+
+
+
 
 
 

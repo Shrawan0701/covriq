@@ -16,7 +16,7 @@ import prisma from './db.js';
 import { isSerpApiConfigured } from './config/env.js';
 
 const app = express();
-const PORT = process.env.PORT || 5003;
+const PORT = process.env.PORT || 5002;
 
 
 // Enable CORS for frontend
