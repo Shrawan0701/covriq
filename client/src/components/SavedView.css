@@ -587,3 +587,143 @@
   font-size: 13px;
   cursor: pointer;
 }
+/* Saved journal responsive/light-theme polish */
+[data-theme="light"] .saved-view-container {
+  background: #f8fafc;
+  color: var(--text-primary);
+}
+
+[data-theme="light"] .journal-kpi-bar,
+[data-theme="light"] .state-breakdown-bar,
+[data-theme="light"] .journal-filter-bar {
+  background: #f8fafc;
+  border-color: var(--border-subtle);
+}
+
+[data-theme="light"] .kpi-card,
+[data-theme="light"] .journal-bet-card,
+[data-theme="light"] .breakdown-pill,
+[data-theme="light"] .bet-journal-meta-row,
+[data-theme="light"] .grading-modal,
+[data-theme="light"] .modal-input,
+[data-theme="light"] .modal-textarea {
+  background: #ffffff;
+  border-color: var(--border-subtle);
+  color: var(--text-primary);
+}
+
+[data-theme="light"] .filter-tab:hover,
+[data-theme="light"] .grade-bet-btn:hover {
+  background: rgba(2, 132, 199, 0.08);
+}
+
+@media (max-width: 767px) {
+  .saved-view-container {
+    width: 100%;
+    max-width: 100vw;
+    overflow: hidden;
+  }
+
+  .saved-view-header {
+    padding: 14px 18px;
+    align-items: flex-start;
+  }
+
+  .saved-view-title {
+    width: 100%;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .back-btn {
+    flex: 0 0 auto;
+    max-width: 118px;
+    line-height: 1.15;
+  }
+
+  .divider {
+    margin-top: 2px;
+  }
+
+  .title-text {
+    flex: 1;
+    min-width: 0;
+    font-size: 15px;
+    line-height: 1.25;
+  }
+
+  .title-text span {
+    overflow-wrap: anywhere;
+  }
+
+  .journal-kpi-bar {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    padding: 14px 16px;
+  }
+
+  .kpi-card {
+    min-width: 0;
+    padding: 12px;
+  }
+
+  .state-breakdown-bar,
+  .journal-filter-bar {
+    padding: 10px 16px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .breakdown-pill,
+  .filter-tab {
+    flex: 0 0 auto;
+  }
+
+  .saved-content-scroll {
+    padding: 18px 16px 28px;
+    overflow-x: hidden;
+  }
+
+  .journal-bet-card {
+    padding: 14px;
+    max-width: 100%;
+  }
+
+  .bet-card-header,
+  .bet-header-left,
+  .bet-header-actions,
+  .bet-journal-meta-row {
+    min-width: 0;
+  }
+
+  .bet-title {
+    width: 100%;
+    overflow-wrap: anywhere;
+  }
+
+  .bet-header-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .meta-chip.date {
+    margin-left: 0;
+  }
+
+  .result-select-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 390px) {
+  .journal-kpi-bar {
+    padding-left: 12px;
+    padding-right: 12px;
+    gap: 10px;
+  }
+
+  .saved-content-scroll {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+}

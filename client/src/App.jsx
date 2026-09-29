@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useHistoryPath } from './utils/router';
-import { modeByPath, DEFAULT_MODE } from './config/discoverModes';
+import { modeByPath, getModeById, DEFAULT_MODE } from './config/discoverModes';
 import Sidebar from './components/Sidebar';
 import ChatWorkspace from './components/ChatWorkspace';
 import SavedView from './components/SavedView';
@@ -21,7 +21,7 @@ const API_BASE = '/api';
 export default function App() {
   const { user, token, isAuthenticated } = useAuth();
   const { oddsFormat } = useTheme();
-  const { sportId, leagueId } = useSport();
+  const { sportId, leagueId, setSport } = useSport();
 
   // Router (History API) -> every Discover Mode is its own URL route.
   const { path, push } = useHistoryPath();
@@ -40,6 +40,7 @@ export default function App() {
   const [currentConversationId, setCurrentConversationId] = useState(null);
   const [activeConversation, setActiveConversation] = useState(null);
   const [messages, setMessages] = useState([]);
+  const skipNextWorkspaceResetRef = useRef(false);
 
   // Streaming State
   const [isStreaming, setIsStreaming] = useState(false);
@@ -130,6 +131,10 @@ export default function App() {
   // sport context changes so one sport/mode's messages never leak into another
   // view. This keeps the workspace consistent with the sport-filtered "My Chats".
   useEffect(() => {
+    if (skipNextWorkspaceResetRef.current) {
+      skipNextWorkspaceResetRef.current = false;
+      return;
+    }
     setCurrentConversationId(null);
     setActiveConversation(null);
     setMessages([]);
@@ -152,10 +157,23 @@ export default function App() {
       const res = await fetch(`${API_BASE}/conversations/${id}`, { headers });
       if (res.ok) {
         const data = await res.json();
-        setActiveConversation(data.conversation);
+        const conversation = data.conversation;
+        const targetMode = getModeById(conversation.mode) || DEFAULT_MODE;
+
+        skipNextWorkspaceResetRef.current = true;
+        if (conversation.sport && (conversation.sport !== sportId || (conversation.league || null) !== (leagueId || null))) {
+          setSport(conversation.sport, conversation.league || null);
+        }
+        if (path !== targetMode.route) {
+          push(targetMode.route);
+        }
+
+        setActiveConversation(conversation);
         setCurrentConversationId(id);
-        setMessages(data.conversation.messages || []);
-        if (isSavedRoute) push(currentMode.route);
+        setMessages(conversation.messages || []);
+        setStreamingContent('');
+        setStreamingStatus(null);
+        setStreamingStructured(null);
       }
     } catch (err) {
       console.error('Failed to load conversation:', err);
