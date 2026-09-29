@@ -142,6 +142,7 @@ body,
   height: 100%;
   width: 100%;
   overflow: hidden;
+  overscroll-behavior-x: none;
   background-color: var(--bg-base);
   color: var(--text-primary);
   font-family: var(--font-sans);
@@ -149,6 +150,15 @@ body,
   -moz-osx-font-smoothing: grayscale;
   font-size: 16px;
   line-height: 1.5;
+}
+
+html,
+body {
+  max-width: 100%;
+}
+
+#root {
+  overflow-x: hidden;
 }
 
 /* ============================================

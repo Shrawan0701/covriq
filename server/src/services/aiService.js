@@ -217,6 +217,38 @@ export function detectSlateIntent(prompt) {
   return /\ball\b[^.?!]*(games?|matches?|slate)|\bevery\b[^.?!]*(games?|matches?|matchups?)|full\s+slate|whole\s+slate|entire\s+slate|today'?s\s+(games|slate|matches)(?!.*\b(schedule|scores?)\b)/i.test(p);
 }
 
+function detectPickSideIntent(prompt, mode = 'ai_picks') {
+  const p = (prompt || '').toLowerCase();
+  const wantsUnderdog =
+    mode === 'upset_finder' ||
+    /\bunderdogs?\b|\bdogs?\b|plus\s*money|\+\d{3,4}|upset|spoiler|longshot|value\s+dog/i.test(p);
+
+  const wantsValue =
+    mode === 'value_finder' ||
+    /\bvalue\b|\bev\b|edge|mispric|price|overlay|positive\s*ev|\+ev/i.test(p);
+
+  const wantsLikelyWinner =
+    mode === 'ai_picks' &&
+    !wantsUnderdog &&
+    /\bpredict|\bprediction|\bpick\b|\bpicks\b|who\s+(will\s+)?win|who\s+wins|winner|lean|best\s+bet|moneyline|ml\b|straight\s*up|su\b/i.test(p);
+
+  if (wantsUnderdog) return 'underdog';
+  if (wantsLikelyWinner) return 'favorite';
+  if (wantsValue && mode !== 'ai_picks') return 'value';
+  return mode === 'ai_picks' ? 'favorite' : 'value';
+}
+
+function getAiPickSideInstruction(sideIntent) {
+  if (sideIntent === 'underdog') {
+    return "\n\nAI PICKS SIDE POLICY: The user is explicitly asking for an underdog/upset/value-dog angle. For moneyline picks, Target Pick MUST be the plus-money or lower implied-probability side when a verified underdog exists. Explain clearly that this is a price/value position, not necessarily the most likely winner.";
+  }
+
+  if (sideIntent === 'favorite') {
+    return "\n\nAI PICKS SIDE POLICY: The user is asking for a normal prediction / likely winner / favorite lean. On the AI Picks page, Target Pick MUST be the more likely side for moneyline recommendations: choose the favorite or highest modeled win-probability team, not a plus-money underdog merely because it has small +EV. If the underdog has better price value, mention it only in VALUE_AND_CONTRARIAN_ANALYSIS as an alternate value note. Do not title the main pick as the underdog unless the user explicitly asked for underdogs/upsets/value dogs.";
+  }
+
+  return '';
+}
 function normalizeClassification({ category, sport, explicitOptOut }) {
   const c = category || 'conversational';
   return {
@@ -700,6 +732,7 @@ export async function streamAiAnalysis({
   };
   const isSlateRequest = classification.category === 'full_slate';
   const isConversational = classification.category === 'conversational';
+  const pickSideIntent = detectPickSideIntent(prompt, mode);
 
   // Live UX Status Stages
   // Stage 1: Reading current game state...
@@ -718,6 +751,9 @@ export async function streamAiAnalysis({
     try {
       const openai = new OpenAI({ apiKey });
       let modeInstruction = getModeInstruction(mode);
+      if (mode === 'ai_picks') {
+        modeInstruction += getAiPickSideInstruction(pickSideIntent);
+      }
 
       if (intent.infoOnly) {
         modeInstruction += "\n\nIMPORTANT OVERRIDE: The user only wants a list/schedule of games. Use the ALTERNATE LIGHTWEIGHT FORMAT - SCHEDULE / INFO ONLY.";
@@ -794,13 +830,13 @@ export async function streamAiAnalysis({
   }
 
   // Fallback deterministic handicapper
-  await runMultiSportHandicapper(prompt, imageList[0] || null, researchSport, mode, intelligenceData, oddsFormat, intent, isSlateRequest, isConversational, onStatus, onChunk, onComplete);
+  await runMultiSportHandicapper(prompt, imageList[0] || null, researchSport, mode, intelligenceData, oddsFormat, intent, isSlateRequest, isConversational, pickSideIntent, onStatus, onChunk, onComplete);
 }
 
 /**
  * Deterministic handicapper simulator used when offline or without API key.
  */
-async function runMultiSportHandicapper(prompt, image, sport, mode, intelligenceData, oddsFormat, intent, isSlateRequest, isConversational, onStatus, onChunk, onComplete) {
+async function runMultiSportHandicapper(prompt, image, sport, mode, intelligenceData, oddsFormat, intent, isSlateRequest, isConversational, pickSideIntent, onStatus, onChunk, onComplete) {
   const matched = intelligenceData.matchedGame;
   const provider = intelligenceData.provider || 'Live Sports Data';
   const dataFreshness = intelligenceData.dataFreshness || 'Live Verified';
@@ -813,25 +849,47 @@ async function runMultiSportHandicapper(prompt, image, sport, mode, intelligence
   let gameTime = matched ? matched.status : 'Today - 7:30 PM ET';
   let venue = matched ? matched.venue : 'Stadium Arena';
 
-  let americanOdds = '-115';
-  let targetPick = `${awayName} Moneyline`;
-  let market = 'Moneyline';
+  const market = 'Moneyline';
+  const awayEval = matched ? evaluateGameMarket(matched, 'moneyline', 'away') : null;
+  const homeEval = matched ? evaluateGameMarket(matched, 'moneyline', 'home') : null;
+  const validOptions = [
+    { side: 'away', team: awayName, evaluation: awayEval },
+    { side: 'home', team: homeName, evaluation: homeEval }
+  ].filter(option => option.evaluation?.marketAvailable && option.evaluation?.americanOdds);
 
-  if (matched?.odds?.details) {
-    americanOdds = matched.odds.details.includes('-') ? (matched.odds.details.split(' ')[1] || '-120') : '-120';
-    if (matched.odds.details.includes(matched.homeTeam.abbrev || matched.homeTeam.name)) {
-      targetPick = `${homeName} Moneyline`;
+  let selected = validOptions[0] || null;
+  if (validOptions.length > 1) {
+    if (mode === 'ai_picks' && pickSideIntent === 'favorite') {
+      selected = validOptions.reduce((best, option) => {
+        const optionProb = option.evaluation.modelProb ?? option.evaluation.impliedProb ?? 0;
+        const bestProb = best.evaluation.modelProb ?? best.evaluation.impliedProb ?? 0;
+        return optionProb > bestProb ? option : best;
+      }, validOptions[0]);
+    } else if (pickSideIntent === 'underdog') {
+      selected = validOptions.reduce((dog, option) => {
+        const optionImplied = option.evaluation.impliedProb ?? 100;
+        const dogImplied = dog.evaluation.impliedProb ?? 100;
+        return optionImplied < dogImplied ? option : dog;
+      }, validOptions[0]);
+    } else {
+      selected = validOptions.reduce((best, option) => {
+        const optionEv = option.evaluation.expectedValue ?? -Infinity;
+        const bestEv = best.evaluation.expectedValue ?? -Infinity;
+        return optionEv > bestEv ? option : best;
+      }, validOptions[0]);
     }
   }
 
-  const numOdds = parseInt(americanOdds.replace(/[^0-9\-+]/g, ''), 10) || -115;
-  const decOdds = americanToDecimal(numOdds);
-  const impProb = americanToImpliedProb(numOdds);
-  const modelProb = Math.min(92, Math.round((impProb + 6.8) * 100) / 100);
-  const edge = calculateEdge(modelProb, numOdds);
-  const ev = calculateExpectedValue(modelProb, numOdds);
-  const breakEven = calculateBreakEvenProb(numOdds);
-
+  const evaluation = selected?.evaluation || null;
+  const americanOdds = evaluation?.americanOdds || '-115';
+  const targetPick = `${selected?.team || awayName} Moneyline`;
+  const numOdds = parseInt(String(americanOdds).replace(/[^0-9\-+]/g, ''), 10) || -115;
+  const decOdds = evaluation?.decimalOdds ?? americanToDecimal(numOdds);
+  const impProb = evaluation?.impliedProb ?? americanToImpliedProb(numOdds);
+  const modelProb = evaluation?.modelProb ?? Math.min(92, Math.round((impProb + 6.8) * 100) / 100);
+  const edge = evaluation?.edge ?? calculateEdge(modelProb, numOdds);
+  const ev = evaluation?.expectedValue ?? calculateExpectedValue(modelProb, numOdds);
+  const breakEven = evaluation?.breakEvenProb ?? calculateBreakEvenProb(numOdds);
   const simulatedResponse = `### [GAME_HEADER]
 - Sport: ${sport}
 - Matchup: ${awayName} @ ${homeName}

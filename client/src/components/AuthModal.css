@@ -10,6 +10,7 @@
   align-items: center;
   justify-content: center;
   padding: var(--space-5);
+  overflow-y: auto;
   z-index: var(--z-modal);
   animation: fadeIn 0.2s ease forwards;
 }
@@ -26,6 +27,7 @@
   overflow: hidden;
   animation: fadeInScale 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   max-height: 90vh;
+  margin: auto;
   overflow-y: auto;
 }
 
@@ -167,6 +169,20 @@
   opacity: 0.8;
 }
 
+
+.auth-secondary-btn {
+  align-self: center;
+  color: var(--accent-cyan);
+  font-size: 13px;
+  font-weight: 700;
+  padding: 7px 10px;
+  border-radius: var(--radius-sm);
+}
+
+.auth-secondary-btn:hover {
+  background: var(--accent-cyan-glow);
+}
+
 /* ============================================
    Responsive
    ============================================ */
@@ -177,6 +193,7 @@
 
   .auth-modal-card {
     max-width: 100%;
+    border-radius: 18px;
   }
 
   .auth-header {
