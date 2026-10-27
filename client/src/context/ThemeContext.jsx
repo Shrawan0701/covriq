@@ -5,7 +5,7 @@ const ThemeContext = createContext();
 
 export function ThemeProvider({ children }) {
   const { token, user } = useAuth();
-  const [theme, setTheme] = useState(() => localStorage.getItem('covriq_theme') || 'dark');
+  const [theme, setTheme] = useState(() => localStorage.getItem('covriq_theme') || 'light');
   const [oddsFormat, setOddsFormat] = useState(() => localStorage.getItem('covriq_odds_format') || 'both');
   const [chatFont, setChatFont] = useState(() => localStorage.getItem('covriq_chat_font') || 'serif');
 

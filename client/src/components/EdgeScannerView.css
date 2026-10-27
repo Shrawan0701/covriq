@@ -26,12 +26,12 @@
   width: 42px;
   height: 42px;
   border-radius: 10px;
-  background: linear-gradient(135deg, rgba(56, 189, 248, 0.15), rgba(14, 165, 233, 0.05));
-  border: 1px solid rgba(56, 189, 248, 0.3);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--accent-cyan) 15%, transparent), color-mix(in srgb, var(--accent-cyan) 5%, transparent));
+  border: 1px solid color-mix(in srgb, var(--accent-cyan) 30%, transparent);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--accent-cyan, #38bdf8);
+  color: var(--accent-cyan);
 }
 
 .scanner-title {
@@ -47,8 +47,8 @@
   font-size: 11px;
   padding: 2px 8px;
   border-radius: 4px;
-  background: rgba(56, 189, 248, 0.12);
-  color: var(--accent-cyan, #38bdf8);
+  background: color-mix(in srgb, var(--accent-cyan) 12%, transparent);
+  color: var(--accent-cyan);
   font-weight: 700;
   text-transform: uppercase;
 }
@@ -75,9 +75,9 @@
 }
 
 .refresh-scan-btn:hover:not(:disabled) {
-  background: rgba(56, 189, 248, 0.1);
-  border-color: rgba(56, 189, 248, 0.4);
-  color: var(--accent-cyan, #38bdf8);
+  background: color-mix(in srgb, var(--accent-cyan) 10%, transparent);
+  border-color: color-mix(in srgb, var(--accent-cyan) 40%, transparent);
+  color: var(--accent-cyan);
 }
 
 /* State Navigation Bar */
@@ -118,9 +118,9 @@
 }
 
 .state-tab.active {
-  background: rgba(56, 189, 248, 0.15);
-  border-color: var(--accent-cyan, #38bdf8);
-  color: var(--accent-cyan, #38bdf8);
+  background: color-mix(in srgb, var(--accent-cyan) 15%, transparent);
+  border-color: var(--accent-cyan);
+  color: var(--accent-cyan);
   font-weight: 700;
 }
 
@@ -174,9 +174,9 @@
 }
 
 .filter-chip.active {
-  background: rgba(56, 189, 248, 0.15);
-  border-color: var(--accent-cyan, #38bdf8);
-  color: var(--accent-cyan, #38bdf8);
+  background: color-mix(in srgb, var(--accent-cyan) 15%, transparent);
+  border-color: var(--accent-cyan);
+  color: var(--accent-cyan);
 }
 
 .sort-group {
@@ -231,13 +231,13 @@
 }
 
 .opportunity-card:hover {
-  border-color: rgba(56, 189, 248, 0.35);
+  border-color: color-mix(in srgb, var(--accent-cyan) 35%, transparent);
   transform: translateY(-2px);
 }
 
 .opportunity-card.market-unavailable {
   opacity: 0.85;
-  border-color: rgba(245, 158, 11, 0.25);
+  border-color: color-mix(in srgb, var(--accent-amber) 25%, transparent);
 }
 
 .market-unavailable-banner {
@@ -246,9 +246,9 @@
   gap: 8px;
   padding: 8px 10px;
   border-radius: 6px;
-  background: rgba(245, 158, 11, 0.1);
-  border: 1px solid rgba(245, 158, 11, 0.25);
-  color: var(--accent-amber, #fbbf24);
+  background: color-mix(in srgb, var(--accent-amber) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent-amber) 25%, transparent);
+  color: var(--accent-amber);
   font-size: 12px;
   line-height: 1.4;
 }
@@ -282,8 +282,8 @@
 }
 
 .state-badge.pre {
-  background: rgba(56, 189, 248, 0.15);
-  color: var(--accent-cyan, #38bdf8);
+  background: color-mix(in srgb, var(--accent-cyan) 15%, transparent);
+  color: var(--accent-cyan);
 }
 
 .state-badge.post {
@@ -345,7 +345,7 @@
   font-size: 14px;
   font-weight: 800;
   font-family: var(--font-mono, monospace);
-  color: var(--accent-cyan, #38bdf8);
+  color: var(--accent-cyan);
 }
 
 .opp-metrics-grid {
@@ -386,7 +386,7 @@
 }
 
 .opp-metric-cell .val.cyan {
-  color: var(--accent-cyan, #38bdf8);
+  color: var(--accent-cyan);
 }
 
 .opp-metric-cell.highlight-edge .val {
@@ -429,7 +429,7 @@
 }
 
 .freshness-badge {
-  color: var(--accent-cyan, #38bdf8);
+  color: var(--accent-cyan);
 }
 
 .opp-actions {
@@ -465,13 +465,13 @@
 }
 
 .opp-action-btn.primary {
-  background: linear-gradient(135deg, rgba(56, 189, 248, 0.2), rgba(14, 165, 233, 0.1));
-  border-color: rgba(56, 189, 248, 0.4);
-  color: var(--accent-cyan, #38bdf8);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--accent-cyan) 20%, transparent), color-mix(in srgb, var(--accent-cyan) 10%, transparent));
+  border-color: color-mix(in srgb, var(--accent-cyan) 40%, transparent);
+  color: var(--accent-cyan);
 }
 
 .opp-action-btn.primary:hover {
-  background: linear-gradient(135deg, rgba(56, 189, 248, 0.3), rgba(14, 165, 233, 0.2));
+  background: linear-gradient(135deg, color-mix(in srgb, var(--accent-cyan) 30%, transparent), color-mix(in srgb, var(--accent-cyan) 20%, transparent));
 }
 
 .scanner-loading-state, .scanner-empty-state {
@@ -488,12 +488,12 @@
   width: 80px;
   height: 80px;
   border-radius: 50%;
-  background: rgba(56, 189, 248, 0.1);
-  border: 2px solid rgba(56, 189, 248, 0.3);
+  background: color-mix(in srgb, var(--accent-cyan) 10%, transparent);
+  border: 2px solid color-mix(in srgb, var(--accent-cyan) 30%, transparent);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--accent-cyan, #38bdf8);
+  color: var(--accent-cyan);
   margin-bottom: 16px;
   animation: pulse 2s infinite;
 }
@@ -514,18 +514,18 @@
   margin-top: 14px;
   padding: 8px 16px;
   border-radius: 6px;
-  background: rgba(56, 189, 248, 0.15);
-  border: 1px solid var(--accent-cyan, #38bdf8);
-  color: var(--accent-cyan, #38bdf8);
+  background: color-mix(in srgb, var(--accent-cyan) 15%, transparent);
+  border: 1px solid var(--accent-cyan);
+  color: var(--accent-cyan);
   font-weight: 600;
   font-size: 13px;
   cursor: pointer;
 }
 
 @keyframes pulse {
-  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(56, 189, 248, 0.4); }
-  70% { transform: scale(1.05); box-shadow: 0 0 0 20px rgba(56, 189, 248, 0); }
-  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(56, 189, 248, 0); }
+  0% { transform: scale(0.95); box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent-cyan) 40%, transparent); }
+  70% { transform: scale(1.05); box-shadow: 0 0 0 20px color-mix(in srgb, var(--accent-cyan) 0%, transparent); }
+  100% { transform: scale(0.95); box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent-cyan) 0%, transparent); }
 }
 
 

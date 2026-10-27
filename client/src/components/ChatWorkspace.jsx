@@ -127,14 +127,29 @@ export default function ChatWorkspace({
       <div className="messages-container" ref={scrollRef}>
         {!hasConversation && (
           <div className="empty-workspace-hero">
-            <div className="hero-badge"><ModeIcon size={15} /> {mode.label}</div>
-            <h1 className="hero-title">{modeCopy?.greeting || `How can I help with today's ${sportUI.displayName} board?`}</h1>
-            <div className="hero-filter-bar">
-              {(modeCopy?.prompts || []).slice(0, 4).map((prompt) => (
-                <button className="filter-pill-btn" key={prompt.label} onClick={() => setInput(prompt.prompt)}>
-                  <span className="pill-label">{prompt.label}</span>
-                </button>
-              ))}
+            <div className="hero-content">
+              <div className="hero-eyebrow"><span className="hero-live-dot" /> RESEARCH WORKSPACE <span className="hero-eyebrow-separator" /> {sportUI.displayName}</div>
+              <div className="hero-badge"><ModeIcon size={15} /> {mode.label}</div>
+              <h1 className="hero-title">{mode.id === 'ai_picks' ? `Analyze the ${sportUI.displayName} slate.` : `${mode.label} for ${sportUI.displayName}.`}</h1>
+              <p className="hero-description">Review market prices, model estimates, key factors, and risks. Choose a prompt or ask your own question.</p>
+              <div className="hero-prompt-label">Suggested queries</div>
+              <div className="hero-filter-bar">
+                {(modeCopy?.prompts || []).slice(0, 4).map((prompt) => (
+                  <button className="filter-pill-btn" key={prompt.label} onClick={() => setInput(prompt.prompt)}>
+                    <span className="pill-label">{prompt.label}</span>
+                    <span className="prompt-arrow" aria-hidden="true">↗</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="hero-visual" aria-hidden="true">
+              <div className="hero-visual-top"><span>ANALYSIS VIEW</span><span>{sportUI.displayName}</span></div>
+              <div className="hero-research-list">
+                <div className="hero-research-row"><span>01</span><strong>Market price</strong><small>Lines and implied probability</small></div>
+                <div className="hero-research-row"><span>02</span><strong>Game context</strong><small>Form, schedule, and matchup</small></div>
+                <div className="hero-research-row"><span>03</span><strong>Model estimate</strong><small>Edge, EV, and uncertainty</small></div>
+              </div>
+              <div className="hero-visual-bottom"><span>OUTPUT</span><strong>Pick · Rationale · Risk</strong></div>
             </div>
           </div>
         )}

@@ -64,7 +64,7 @@ export default function Sidebar({
       <div className="sidebar-header">
         <a href="/" className="brand-logo" onClick={(e) => { e.preventDefault(); onNewChat(); }}>
           <div className="brand-icon">
-            <img src="/covriq.png" alt="CovrIQ" className="brand-logo-img" />
+            <img src="/covriq-mark.svg" alt="CovrIQ" className="brand-logo-img" />
           </div>
           <div>
             Covr<span style={{ color: 'var(--accent-cyan)' }}>IQ</span>

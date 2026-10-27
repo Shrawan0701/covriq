@@ -121,19 +121,19 @@
 
 .submit-auth-btn {
   padding: var(--space-3);
-  background: linear-gradient(135deg, var(--accent-cyan), #0284c7);
+  background: linear-gradient(135deg, var(--accent-cyan), var(--accent-cyan));
   border-radius: var(--radius-md);
   color: #0b0d10;
   font-size: 14px;
   font-weight: 700;
   margin-top: 4px;
-  box-shadow: 0 2px 10px rgba(56, 189, 248, 0.25);
+  box-shadow: 0 2px 10px color-mix(in srgb, var(--accent-cyan) 25%, transparent);
   transition: all var(--transition-fast);
 }
 
 .submit-auth-btn:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 4px 16px rgba(56, 189, 248, 0.35);
+  box-shadow: 0 4px 16px color-mix(in srgb, var(--accent-cyan) 35%, transparent);
 }
 
 .auth-error-msg {
@@ -213,9 +213,9 @@
   align-items: center;
   gap: 8px;
   padding: 10px 12px;
-  border: 1px solid rgba(56, 189, 248, 0.25);
+  border: 1px solid color-mix(in srgb, var(--accent-cyan) 25%, transparent);
   border-radius: var(--radius-md);
-  background: rgba(56, 189, 248, 0.08);
+  background: color-mix(in srgb, var(--accent-cyan) 8%, transparent);
   color: var(--text-secondary);
   font-size: 13px;
   line-height: 1.4;

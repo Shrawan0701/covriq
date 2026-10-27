@@ -214,9 +214,9 @@
   gap: 8px;
   padding: 10px 14px;
   border-radius: 8px;
-  background: rgba(245, 158, 11, 0.1);
-  border: 1px solid rgba(245, 158, 11, 0.25);
-  color: var(--accent-amber, #fbbf24);
+  background: color-mix(in srgb, var(--accent-amber) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent-amber) 25%, transparent);
+  color: var(--accent-amber);
   font-size: 12.5px;
   line-height: 1.4;
   margin-top: 8px;
@@ -355,15 +355,15 @@
 }
 
 .verdict-badge.LEAN {
-  background: linear-gradient(135deg, rgba(56, 189, 248, 0.2), rgba(56, 189, 248, 0.08));
-  color: #38bdf8;
-  border: 1px solid #38bdf8;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--accent-cyan) 20%, transparent), color-mix(in srgb, var(--accent-cyan) 8%, transparent));
+  color: var(--accent-cyan);
+  border: 1px solid var(--accent-cyan);
 }
 
 .verdict-badge.PASS {
-  background: linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(245, 158, 11, 0.08));
-  color: #fbbf24;
-  border: 1px solid #f59e0b;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--accent-amber) 20%, transparent), color-mix(in srgb, var(--accent-amber) 8%, transparent));
+  color: var(--accent-amber);
+  border: 1px solid var(--accent-amber);
 }
 
 .verdict-badge.AVOID {
@@ -462,9 +462,9 @@
 }
 
 .status-pill.upcoming {
-  background: rgba(56, 189, 248, 0.15);
+  background: color-mix(in srgb, var(--accent-cyan) 15%, transparent);
   color: var(--accent-cyan);
-  border: 1px solid rgba(56, 189, 248, 0.25);
+  border: 1px solid color-mix(in srgb, var(--accent-cyan) 25%, transparent);
 }
 
 .status-pill.final {
@@ -480,8 +480,8 @@
   font-weight: 700;
   padding: 3px 8px;
   border-radius: 6px;
-  background: rgba(56, 189, 248, 0.08);
-  border: 1px solid rgba(56, 189, 248, 0.2);
+  background: color-mix(in srgb, var(--accent-cyan) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent-cyan) 20%, transparent);
   color: var(--text-secondary);
 }
 
@@ -512,8 +512,8 @@
 }
 
 .metric-tile.highlight-ev {
-  border-color: rgba(56, 189, 248, 0.3);
-  background: linear-gradient(135deg, var(--bg-surface-elevated), rgba(56, 189, 248, 0.05));
+  border-color: color-mix(in srgb, var(--accent-cyan) 30%, transparent);
+  background: linear-gradient(135deg, var(--bg-surface-elevated), color-mix(in srgb, var(--accent-cyan) 5%, transparent));
 }
 
 /* ============================================
@@ -596,7 +596,7 @@
 
 .deep-analysis-btn {
   color: var(--accent-cyan);
-  border-color: rgba(56, 189, 248, 0.28);
+  border-color: color-mix(in srgb, var(--accent-cyan) 28%, transparent);
   background: var(--accent-cyan-glow);
 }
 
@@ -652,7 +652,7 @@
   text-transform: uppercase;
   letter-spacing: 0.5px;
   color: var(--text-secondary);
-  background: rgba(56, 189, 248, 0.06);
+  background: color-mix(in srgb, var(--accent-cyan) 6%, transparent);
   font-weight: 800;
 }
 
@@ -674,7 +674,7 @@
 }
 
 [data-theme="light"] .analysis-table th {
-  background: rgba(2, 132, 199, 0.07);
+  background: color-mix(in srgb, var(--accent-cyan) 7%, transparent);
 }
 
 @media (max-width: 480px) {

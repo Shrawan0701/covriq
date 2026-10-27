@@ -24,7 +24,7 @@
 }
 
 .sport-selector-btn:hover {
-  border-color: var(--accent-cyan, #38bdf8);
+  border-color: var(--accent-cyan);
 }
 
 .sport-selector-label {
@@ -71,7 +71,7 @@
   padding: 6px 10px;
   background: transparent;
   border: none;
-  color: var(--accent-cyan, #38bdf8);
+  color: var(--accent-cyan);
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
@@ -115,7 +115,7 @@
 .sport-option.active,
 .league-option.active {
   color: var(--text-primary, #ffffff);
-  background: rgba(56, 189, 248, 0.12);
+  background: color-mix(in srgb, var(--accent-cyan) 12%, transparent);
   font-weight: 600;
 }
 
@@ -142,6 +142,6 @@
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: var(--accent-cyan, #38bdf8);
+  background: var(--accent-cyan);
   flex-shrink: 0;
 }

@@ -102,7 +102,7 @@
 }
 
 .message-avatar.ai {
-  background: linear-gradient(135deg, #0284c7, #38bdf8);
+  background: linear-gradient(135deg, var(--accent-cyan), var(--accent-cyan));
   color: #0b0d10;
   box-shadow: 0 0 12px var(--accent-cyan-glow);
 }
@@ -472,7 +472,7 @@
   width: 34px;
   height: 34px;
   border-radius: var(--radius-md);
-  background: linear-gradient(135deg, var(--accent-cyan), #0284c7);
+  background: linear-gradient(135deg, var(--accent-cyan), var(--accent-cyan));
   color: #0b0d10;
   display: flex;
   align-items: center;
@@ -703,14 +703,14 @@
    ============================================ */
 .chat-workspace {
   background:
-    linear-gradient(180deg, rgba(56, 189, 248, 0.08) 0%, transparent 34%),
+    linear-gradient(180deg, color-mix(in srgb, var(--accent-cyan) 8%, transparent) 0%, transparent 34%),
     radial-gradient(circle at 18% 18%, rgba(16, 185, 129, 0.08), transparent 32%),
     var(--bg-base);
 }
 
 [data-theme="light"] .chat-workspace {
   background:
-    linear-gradient(180deg, rgba(2, 132, 199, 0.10) 0%, rgba(2, 132, 199, 0.025) 36%, transparent 64%),
+    linear-gradient(180deg, color-mix(in srgb, var(--accent-cyan) 10%, transparent) 0%, color-mix(in srgb, var(--accent-cyan) 2.5%, transparent) 36%, transparent 64%),
     linear-gradient(135deg, rgba(15, 23, 42, 0.035), transparent 46%),
     var(--bg-base);
 }
@@ -733,8 +733,8 @@
   justify-content: center;
   padding: 5px 12px;
   border-radius: var(--radius-full);
-  border: 1px solid rgba(56, 189, 248, 0.28);
-  background: rgba(56, 189, 248, 0.10);
+  border: 1px solid color-mix(in srgb, var(--accent-cyan) 28%, transparent);
+  background: color-mix(in srgb, var(--accent-cyan) 10%, transparent);
   color: var(--accent-cyan);
   font-size: 11px;
   font-weight: 800;
@@ -767,7 +767,7 @@
 }
 
 .filter-pill-btn:hover {
-  box-shadow: 0 10px 24px rgba(2, 132, 199, 0.16);
+  box-shadow: 0 10px 24px color-mix(in srgb, var(--accent-cyan) 16%, transparent);
 }
 
 .chat-input-wrapper {
@@ -780,8 +780,8 @@
 }
 
 .chat-input-box {
-  border-color: rgba(56, 189, 248, 0.24);
-  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.34), 0 0 0 1px rgba(56, 189, 248, 0.08);
+  border-color: color-mix(in srgb, var(--accent-cyan) 24%, transparent);
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.34), 0 0 0 1px color-mix(in srgb, var(--accent-cyan) 8%, transparent);
 }
 
 .chat-textarea::placeholder {
@@ -792,13 +792,13 @@
 @media (max-width: 767px) {
   .chat-workspace {
     background:
-      linear-gradient(180deg, rgba(56, 189, 248, 0.12) 0%, rgba(56, 189, 248, 0.035) 26%, transparent 48%),
+      linear-gradient(180deg, color-mix(in srgb, var(--accent-cyan) 12%, transparent) 0%, color-mix(in srgb, var(--accent-cyan) 3.5%, transparent) 26%, transparent 48%),
       var(--bg-base);
   }
 
   [data-theme="light"] .chat-workspace {
     background:
-      linear-gradient(180deg, rgba(2, 132, 199, 0.14) 0%, rgba(2, 132, 199, 0.04) 32%, transparent 58%),
+      linear-gradient(180deg, color-mix(in srgb, var(--accent-cyan) 14%, transparent) 0%, color-mix(in srgb, var(--accent-cyan) 4%, transparent) 32%, transparent 58%),
       var(--bg-base);
   }
 

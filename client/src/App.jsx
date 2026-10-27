@@ -14,7 +14,7 @@ import { useAuth } from './context/AuthContext';
 import { useTheme } from './context/ThemeContext';
 import { useSport } from './context/SportContext';
 import { parseStructuredResponse } from './utils/oddsClient';
-import { Menu, X } from 'lucide-react';
+import { Menu, Plus, X } from 'lucide-react';
 
 const API_BASE = '/api';
 
@@ -464,8 +464,12 @@ export default function App() {
           <Menu size={22} />
         </button>
         <span className="mobile-brand-title">
+          <img src="/covriq-mark.svg" alt="" />
           Covr<span style={{ color: 'var(--accent-cyan)' }}>IQ</span>
         </span>
+        <button className="mobile-new-analysis" onClick={handleNewChat} aria-label="New analysis" title="New analysis">
+          <Plus size={19} />
+        </button>
       </div>
 
       {/* Backdrop for Mobile Drawer */}

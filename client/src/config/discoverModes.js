@@ -26,7 +26,7 @@ export const DISCOVER_MODES = [
     route: '/edge-scanner',
     label: 'Edge Scanner',
     icon: Radar,
-    color: '#38bdf8',
+    color: 'var(--accent-cyan)',
     badge: 'Live',
     desc: 'Scan live board for +EV discrepancies'
   },

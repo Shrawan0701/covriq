@@ -5,6 +5,7 @@ import { AuthProvider } from './context/AuthContext.jsx';
 import { ThemeProvider } from './context/ThemeContext.jsx';
 import { SportProvider } from './context/SportContext.jsx';
 import './index.css';
+import './revamp.css';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
